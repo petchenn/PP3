@@ -1,5 +1,4 @@
 #pragma once
-#pragma once
 #include <future>
 #include "Windows.h"
 #include <vector>
