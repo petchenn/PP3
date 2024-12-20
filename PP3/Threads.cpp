@@ -4,8 +4,8 @@ Threads::Threads() {
 	count = std::thread::hardware_concurrency();
 	//workThreads = true;
 	for (int i = 0; i < count; i++) {
-		HANDLE thread = CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE) work, this, 0, NULL);
-		if (thread == nullptr) {
+		HANDLE thread = (HANDLE)_beginthreadex(NULL, 0, [](void* param) -> unsigned {
+			return static_cast<Threads*>(param)->work(param); }, this, 0, NULL);		if (thread == nullptr) {
 			DWORD err = GetLastError();
 			printf("Cannot create thread, GetLastError=%u", err);
 		}
@@ -15,44 +15,33 @@ Threads::Threads() {
 	}
 }
 
-//Threads::~Threads() {
-//	workThreads = true;
-//	cond_stop.notify_all();
-//
-//	for (int i = 0; i < count; i++) {
-//		if (threads[i].joinable())
-//			threads[i].join();
-//	}
-//}
-//
-////void Threads::work(int j) {
-////	while (true) {
-////		std::unique_lock<std::mutex> lk(m);
-////		cond_stop.wait(lk, [this]() {return !operations.empty() || workThreads; });
-////		std::function<void()> curop;
-////
-////		//printf("%d  ", getThreadID());
-////		if (!operations.empty()) {
-////
-////			curop = std::bind(operations.front(), getThreadID());
-////			operations.pop();
-////			lk.unlock();
-////		}
-////		if (workThreads) break;
-////		curop();
-////	}
-////}
-//
-//void Threads::putFunc(std::function<void(unsigned int)> op) {
-//	{
-//		std::lock_guard<std::mutex> guard(m);
-//		operations.push(op);
-//	}
-//	cond_stop.notify_one();
-//}
-//
-//unsigned int Threads::getThreadID() {
-//	std::thread::id threadID = std::this_thread::get_id();
-//	unsigned int v = *static_cast<unsigned int*>(static_cast<void*>(&threadID));
-//	return v;
-//}
+DWORD WINAPI Threads::work(LPVOID param){
+while (true) {
+		std::unique_lock<std::mutex> lk(m);
+		printf("block \n");
+		cond_stop.wait(lk, [this]() {return !operations.empty() || workThreads; });
+		std::function<void()> curop;
+
+		printf("work ");
+		if (!operations.empty()) {
+
+			curop = std::bind(operations.front(), 100000);
+			operations.pop();
+			lk.unlock();
+		}
+		if (workThreads) break;
+
+		curop();
+	}
+	_endthreadex(0);
+	return 0;
+}
+
+void Threads::putFunc(std::function<void(unsigned int)> op) {
+	{
+		std::lock_guard<std::mutex> guard(m);
+		operations.push(op);
+	}
+	cond_stop.notify_one();
+}
+

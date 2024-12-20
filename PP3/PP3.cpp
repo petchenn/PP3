@@ -2,27 +2,44 @@
 //
 
 #include <iostream>
-#include <Windows.h>
+#include "Threads.h"
+#include <chrono>
+#include <thread>
 
-DWORD WINAPI MyThread(LPVOID lpParam)
+int k = 0;
+std::mutex m;
+//std::condition_variable_any cond_stop;
+
+void heavyComputation(unsigned int n) {
+    auto start = std::chrono::high_resolution_clock::now();
+    auto duration = std::chrono::milliseconds(5000); // 5 секунд
+    double result = 0.0;
+
+    for (long long i = 0; i < 1e9; ++i) {
+        result += sqrt(i);
+
+        // Проверяем, прошло ли 5 секунд
+        if (std::chrono::high_resolution_clock::now() - start > duration) {
+            break;
+        }
+    }
 {
-    BOOL* active;
-    active = (BOOL*)lpParam;
-    //some code
-    *active = FALSE;
+        std::lock_guard<std::mutex> guard(m);
+        k++;
 }
 
-void InitThread() {
-    HANDLE hThread = NULL;
-    DWORD ThreadID = 0;
-    BOOL active = TRUE;
-    hThread = CreateThread(NULL, 0, (LPFIBER_START_ROUTINE)MyThread, (void*)&active, 0, &ThreadID);
-    while(active){}
-    CloseHandle(hThread);
 }
 
 int main()
 {
-    std::cout << "Hello World!\n";
+    Threads tr;
+    std::function<void(unsigned int)> f = heavyComputation;
+    printf("creating a thread pool with %d threads\n", tr.getThreadCount());
+    printf("The sums of the square roots are calculated...\n");
+    tr.putFunc(f);
+    tr.putFunc(f);
+    tr.putFunc(f);
+    while (k < 3) {
+    }
 }
 
