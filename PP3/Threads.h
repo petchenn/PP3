@@ -15,6 +15,9 @@ public:
 	Threads();
 	~Threads();
 	void putFunc(std::function<void(unsigned int)>);
+	int getThreadCount() {
+		return count;
+	}
 
 private:
 	mutable std::mutex m;
