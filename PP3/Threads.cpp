@@ -15,6 +15,16 @@ Threads::Threads() {
 	}
 }
 
+Threads::~Threads() {
+	workThreads = true;
+	cond_stop.notify_all();
+	WaitForMultipleObjects(count, threads.data(), TRUE, INFINITE);
+
+	for (int i = 0; i < count; i++) {
+		CloseHandle(threads[i]);
+	}
+}
+
 DWORD WINAPI Threads::work(LPVOID param){
 while (true) {
 		std::unique_lock<std::mutex> lk(m);
