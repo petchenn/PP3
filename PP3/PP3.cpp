@@ -21,10 +21,11 @@ void heavyComputation(unsigned int n) {
             break;
         }
     }
-{
+    {
         std::lock_guard<std::mutex> guard(m);
         k++;
-}
+    }
+    printf("result : %f, %d th iteration.\n", result, k);
 
 }
 
